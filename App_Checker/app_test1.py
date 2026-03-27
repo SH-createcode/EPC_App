@@ -2,10 +2,6 @@ import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 
-# -------------------------------
-# External CSS (Bootstrap + Font)
-# -------------------------------
-
 external_stylesheets = [
     "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.0/flatly/bootstrap.min.css",
     {
@@ -17,10 +13,7 @@ external_stylesheets = [
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-# -------------------------------
-# SAFE INLINE CSS (Render OK)
-# -------------------------------
-
+# ---------- SAFE INLINE CSS (NO html.Style BUG) ----------
 hounslow_css = """
 body { font-family: 'Roboto', sans-serif; }
 
@@ -57,10 +50,6 @@ body { font-family: 'Roboto', sans-serif; }
 }
 """
 
-# -------------------------------
-# Options
-# -------------------------------
-
 benefit_options = [
     {"label": "Universal Credit", "value": "Universal Credit"},
     {"label": "Pension Credit", "value": "Pension Credit"},
@@ -72,46 +61,40 @@ benefit_options = [
 
 epc_options = [{"label": r, "value": r} for r in ["A","B","C","D","E","F","G","Unknown"]]
 
-# -------------------------------
-# LAYOUT
-# -------------------------------
+# ---------------------------- LAYOUT ----------------------------
 
 app.layout = html.Div([
 
-    # SAFE CSS injection — WORKS ON RENDER
-    html.Style(hounslow_css),
+    html.Head([
+        html.Style(hounslow_css)
+    ]),
 
-    # HEADER
     html.Div([
         html.Div("London Borough of Hounslow", className="hounslow-title")
     ], className="hounslow-header"),
 
-    # TITLE
     html.Div([
-        html.H2("Energy Support Eligibility Checker",
-                className="text-center mt-4 mb-2"),
+        html.H2("Energy Support Eligibility Checker", className="text-center mt-4 mb-2"),
         html.P("Enter your details below to check which schemes you may be eligible for.",
                className="text-center mb-4")
     ], className="container"),
 
-    # FORM
     html.Div([
         html.Div([
 
             html.Div([
                 html.Label("Annual Household Income (£) - no commas or spaces"),
-                dcc.Input(id="income", type="text", className="form-control", inputMode="numeric")
+                dcc.Input(id="income", type="text", className="form-control")
             ], className="mb-3"),
 
             html.Div([
                 html.Label("Your Age"),
-                dcc.Input(id="age", type="text", className="form-control", inputMode="numeric")
+                dcc.Input(id="age", type="text", className="form-control")
             ], className="mb-3"),
 
             html.Div([
                 html.Label("Benefits Received"),
-                dcc.Dropdown(id="benefits", options=benefit_options, multi=True,
-                             className="form-control")
+                dcc.Dropdown(id="benefits", options=benefit_options, multi=True, className="form-control")
             ], className="mb-3"),
 
             html.Div([
@@ -121,41 +104,34 @@ app.layout = html.Div([
 
             html.Div([
                 html.Label("Energy Debt (£)"),
-                dcc.Input(id="debt", type="text", className="form-control", inputMode="numeric")
+                dcc.Input(id="debt", type="text", className="form-control")
             ], className="mb-3"),
 
             html.Div([
                 html.Label("Do you own your home?"),
                 dcc.RadioItems(
                     id="homeowner",
-                    options=[
-                        {"label": "Yes", "value": "yes"},
-                        {"label": "No", "value": "no"}
-                    ],
+                    options=[{"label":"Yes","value":"yes"},{"label":"No","value":"no"}],
                     inline=True
                 )
             ], className="mb-3"),
 
             html.Button("Check Eligibility", id="submit",
-                        className="btn btn-primary purple-button mt-3"),
+                        className="btn btn-primary purple-button"),
 
             html.Div(id="error", className="text-danger mt-3")
 
         ], className="col-md-6 mx-auto form-box")
     ], className="container"),
 
-    # RESULTS
     html.Div([
         html.H3("Results", className="mt-5 mb-3 text-center"),
         html.Div(id="results", className="alert alert-info p-4 shadow-sm")
     ], className="container")
-
 ])
 
 
-# -------------------------------
-# CALLBACK
-# -------------------------------
+# ---------------------------- CALLBACK ----------------------------
 
 @app.callback(
     [Output("results", "children"),
@@ -169,26 +145,19 @@ app.layout = html.Div([
     State("homeowner", "value")
 )
 def calculate(n, income, age, benefits, epc, debt, homeowner):
-
     if not n:
         return ("Fill out the form and click 'Check Eligibility'.", "")
 
     errors = []
 
-    try:
-        income = float(income)
-    except:
-        errors.append("Annual income must be a valid number.")
+    try: income = float(income)
+    except: errors.append("Annual income must be a valid number.")
 
-    try:
-        age = int(age)
-    except:
-        errors.append("Age must be a valid whole number.")
+    try: age = int(age)
+    except: errors.append("Age must be a valid whole number.")
 
-    try:
-        debt = float(debt)
-    except:
-        errors.append("Energy debt must be a valid number.")
+    try: debt = float(debt)
+    except: errors.append("Energy debt must be a valid number.")
 
     if errors:
         return ("", html.Ul([html.Li(e) for e in errors]))
@@ -197,52 +166,33 @@ def calculate(n, income, age, benefits, epc, debt, homeowner):
     epc = epc or "Unknown"
 
     results = {}
-
     results["Warm Home Discount"] = any(b in benefits for b in [
         "Universal Credit","Pension Credit","ESA","JSA","Income Support","Tax Credits"
     ])
-
     results["Winter Fuel Payment"] = age >= 66
-
-    results["Great British Insulation Scheme (GBIS)"] = (
-        epc in ["D","E","F","G"] or len(benefits) > 0
-    )
-
-    results["ECO4"] = (epc in ["D","E","F","G"] and len(benefits) > 0)
-
+    results["Great British Insulation Scheme (GBIS)"] = (epc in ["D","E","F","G"] or len(benefits)>0)
+    results["ECO4"] = (epc in ["D","E","F","G"] and len(benefits)>0)
     results["Boiler Upgrade Scheme"] = (homeowner == "yes")
-
     results["Ofgem Debt Relief Scheme"] = (
-        debt >= 100 and any(
-            b in benefits for b in [
-                "Universal Credit","Pension Credit","ESA","JSA","Income Support","Tax Credits"
-            ]
-        )
+        debt>=100 and any(b in benefits for b in [
+            "Universal Credit","Pension Credit","ESA","JSA","Income Support","Tax Credits"
+        ])
     )
 
     output = []
     for scheme, ok in results.items():
-        output.append(
-            html.Div([
-                html.Span("✔ " if ok else "✘ ",
-                          style={
-                              "color": "green" if ok else "red",
-                              "font-weight": "bold",
-                              "font-size": "18px"
-                          }),
-                html.Span(
-                    f"You are likely eligible for: {scheme}"
-                    if ok else f"Likely NOT eligible for: {scheme}"
-                )
-            ], className="mb-2")
-        )
+        output.append(html.Div([
+            html.Span("✔ " if ok else "✘ ",
+                      style={"color":"green" if ok else "red", "font-weight":"bold", "font-size":"18px"}),
+            html.Span(
+                f"You are likely eligible for: {scheme}" if ok else f"Likely NOT eligible for: {scheme}"
+            )
+        ], className="mb-2"))
 
     return (output, "")
 
 
-# -------------------------------
-# RUN
-# -------------------------------
+# ---------------------------- RUN ----------------------------
 
 if __name__ == "__main__":
     app.run(debug=True)

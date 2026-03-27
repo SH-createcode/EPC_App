@@ -28,35 +28,45 @@ app.layout = html.Div([
     ], className="container"),
 
     html.Div([
-        html.Div([
+    html.Div([
+        html.Label("Annual Household Income (£) - no commas or spaces"),
+        dcc.Input(id="income", type="text", className="form-control", inputMode="numeric")
+    ], className="mb-3"),
 
-            html.Label("Annual Household Income (£) - no commas or spaces"),
-            dcc.Input(id="income", type="text", className="form-control", inputMode="numeric"),
+    html.Div([
+        html.Label("Your Age"),
+        dcc.Input(id="age", type="text", className="form-control", inputMode="numeric")
+    ], className="mb-3"),
 
-            html.Label("Your Age", className="mt-3"),
-            dcc.Input(id="age", type="text", className="form-control", inputMode="numeric"),
+    html.Div([
+        html.Label("Benefits Received"),
+        dcc.Dropdown(id="benefits", options=benefit_options, multi=True, className="form-control")
+    ], className="mb-3"),
 
-            html.Label("Benefits Received", className="mt-3"),
-            dcc.Dropdown(id="benefits", options=benefit_options, multi=True, className="mb-3"),
+    html.Div([
+        html.Label("EPC Rating"),
+        dcc.Dropdown(id="epc", options=epc_options, className="form-control")
+    ], className="mb-3"),
 
-            html.Label("EPC Rating"),
-            dcc.Dropdown(id="epc", options=epc_options, className="mb-3"),
+    html.Div([
+        html.Label("Energy Debt (£)"),
+        dcc.Input(id="debt", type="text", className="form-control", inputMode="numeric")
+    ], className="mb-3"),
 
-            html.Label("Energy Debt (£)"),
-            dcc.Input(id="debt", type="text", className="form-control", inputMode="numeric"),
+    html.Div([
+        html.Label("Do you own your home?"),
+        dcc.RadioItems(
+            id="homeowner",
+            options=[{"label": "Yes", "value": "yes"}, {"label": "No", "value": "no"}],
+            inline=True
+        )
+    ], className="mb-3"),
 
-            html.Label("Do you own your home?", className="mt-3"),
-            dcc.RadioItems(
-                id="homeowner",
-                options=[{"label": "Yes", "value": "yes"}, {"label": "No", "value": "no"}],
-                inline=True
-            ),
+    html.Button("Check Eligibility", id="submit", className="btn btn-primary mt-3"),
 
-            html.Button("Check Eligibility", id="submit", className="btn btn-primary mt-4"),
+    html.Div(id="error", className="text-danger mt-3")
 
-            html.Div(id="error", className="text-danger mt-3")
-
-        ], className="col-md-6 mx-auto")
+], className="col-md-6 mx-auto")
     ], className="container"),
 
     html.Div([

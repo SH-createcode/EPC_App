@@ -2,6 +2,10 @@ import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
 
+# -------------------------------
+# External CSS (Bootstrap + Font)
+# -------------------------------
+
 external_stylesheets = [
     "https://cdnjs.cloudflare.com/ajax/libs/bootswatch/5.3.0/flatly/bootstrap.min.css",
     {
@@ -10,48 +14,52 @@ external_stylesheets = [
     }
 ]
 
-# ---------------------------
-# Hounslow CSS injected safely
-# ---------------------------
-hounslow_css = """
-    body { font-family: 'Roboto', sans-serif; }
-
-    .hounslow-header {
-        background-color: white;
-        border-bottom: 4px solid #4B0055;
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-    }
-
-    .hounslow-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: black;
-        text-align: center;
-    }
-
-    .form-box {
-        border: 1px solid #cccccc;
-        padding: 25px;
-        border-radius: 8px;
-        background-color: #ffffff;
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.10);
-    }
-
-    .purple-button {
-        background-color: #4B0055 !important;
-        border-color: #4B0055 !important;
-    }
-
-    .purple-button:hover {
-        background-color: #5C2D91 !important;
-        border-color: #5C2D91 !important;
-    }
-"""
-
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
+
+# -------------------------------
+# SAFE INLINE CSS (Render OK)
+# -------------------------------
+
+hounslow_css = """
+body { font-family: 'Roboto', sans-serif; }
+
+.hounslow-header {
+    background-color: white;
+    border-bottom: 4px solid #4B0055;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.hounslow-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: black;
+}
+
+.form-box {
+    border: 1px solid #cccccc;
+    padding: 25px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.10);
+}
+
+.purple-button {
+    background-color: #4B0055 !important;
+    border-color: #4B0055 !important;
+}
+
+.purple-button:hover {
+    background-color: #5C2D91 !important;
+    border-color: #5C2D91 !important;
+}
+"""
+
+# -------------------------------
+# Options
+# -------------------------------
 
 benefit_options = [
     {"label": "Universal Credit", "value": "Universal Credit"},
@@ -64,28 +72,29 @@ benefit_options = [
 
 epc_options = [{"label": r, "value": r} for r in ["A","B","C","D","E","F","G","Unknown"]]
 
-# ---------------------------
+# -------------------------------
 # LAYOUT
-# ---------------------------
+# -------------------------------
 
 app.layout = html.Div([
 
-    # Inject CSS safely
+    # SAFE CSS injection — WORKS ON RENDER
     html.Style(hounslow_css),
 
-    # Header
+    # HEADER
     html.Div([
         html.Div("London Borough of Hounslow", className="hounslow-title")
     ], className="hounslow-header"),
 
-    # Title + intro
+    # TITLE
     html.Div([
-        html.H2("Energy Support Eligibility Checker", className="text-center mt-4 mb-2"),
+        html.H2("Energy Support Eligibility Checker",
+                className="text-center mt-4 mb-2"),
         html.P("Enter your details below to check which schemes you may be eligible for.",
                className="text-center mb-4")
     ], className="container"),
 
-    # Form
+    # FORM
     html.Div([
         html.Div([
 
@@ -101,7 +110,8 @@ app.layout = html.Div([
 
             html.Div([
                 html.Label("Benefits Received"),
-                dcc.Dropdown(id="benefits", options=benefit_options, multi=True, className="form-control")
+                dcc.Dropdown(id="benefits", options=benefit_options, multi=True,
+                             className="form-control")
             ], className="mb-3"),
 
             html.Div([
@@ -118,7 +128,10 @@ app.layout = html.Div([
                 html.Label("Do you own your home?"),
                 dcc.RadioItems(
                     id="homeowner",
-                    options=[{"label":"Yes","value":"yes"},{"label":"No","value":"no"}],
+                    options=[
+                        {"label": "Yes", "value": "yes"},
+                        {"label": "No", "value": "no"}
+                    ],
                     inline=True
                 )
             ], className="mb-3"),
@@ -131,17 +144,18 @@ app.layout = html.Div([
         ], className="col-md-6 mx-auto form-box")
     ], className="container"),
 
-    # Results
+    # RESULTS
     html.Div([
         html.H3("Results", className="mt-5 mb-3 text-center"),
         html.Div(id="results", className="alert alert-info p-4 shadow-sm")
     ], className="container")
+
 ])
 
 
-# ---------------------------
+# -------------------------------
 # CALLBACK
-# ---------------------------
+# -------------------------------
 
 @app.callback(
     [Output("results", "children"),
@@ -199,9 +213,11 @@ def calculate(n, income, age, benefits, epc, debt, homeowner):
     results["Boiler Upgrade Scheme"] = (homeowner == "yes")
 
     results["Ofgem Debt Relief Scheme"] = (
-        debt >= 100 and any(b in benefits for b in [
-            "Universal Credit","Pension Credit","ESA","JSA","Income Support","Tax Credits"
-        ])
+        debt >= 100 and any(
+            b in benefits for b in [
+                "Universal Credit","Pension Credit","ESA","JSA","Income Support","Tax Credits"
+            ]
+        )
     )
 
     output = []
@@ -209,8 +225,11 @@ def calculate(n, income, age, benefits, epc, debt, homeowner):
         output.append(
             html.Div([
                 html.Span("✔ " if ok else "✘ ",
-                          style={"color":"green" if ok else "red",
-                                 "font-weight":"bold","font-size":"18px"}),
+                          style={
+                              "color": "green" if ok else "red",
+                              "font-weight": "bold",
+                              "font-size": "18px"
+                          }),
                 html.Span(
                     f"You are likely eligible for: {scheme}"
                     if ok else f"Likely NOT eligible for: {scheme}"
@@ -221,8 +240,9 @@ def calculate(n, income, age, benefits, epc, debt, homeowner):
     return (output, "")
 
 
-# ---------------------------
+# -------------------------------
 # RUN
-# ---------------------------
+# -------------------------------
+
 if __name__ == "__main__":
     app.run(debug=True)
